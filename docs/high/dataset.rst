@@ -139,7 +139,7 @@ where dtype is a list of tuples containing the header, type, and array size (for
 
 3)	Define the shape as an integer, which is equal to the number of rows in the dataset::
 
-    >>> rShape = 5
+    >>> rShape = len(HDFData)
 
 Multiple indexing
 ~~~~~~~~~~~~~~~~~
