@@ -69,7 +69,7 @@ following slicing arguments are recognized:
     * At most one ``Ellipsis`` (``...``) object
     * An empty tuple (``()``) to retrieve all data or `scalar` data
 
-Here are a few examples (output omitted).
+Here are a few examples (output omitted)::
 
     >>> dset = f.create_dataset("MyDataset", (10,10,10), 'f')
     >>> dset[0,0,0]
@@ -96,7 +96,7 @@ To retrieve the contents of a `scalar` dataset, you can use the same
 syntax as in NumPy:  ``result = dset[()]``.  In other words, index into
 the dataset using an empty tuple.
 
-For simple slicing, broadcasting is supported:
+For simple slicing, broadcasting is supported::
 
     >>> dset[0,:,:] = np.arange(10)  # Broadcasts to (10,10)
 
@@ -112,62 +112,62 @@ Compound Datasets
 ~~~~~~~~~~~~~~~~~
 
 Compound datasets can be used to store different types of data in separate columns.  This practice can be valuable when used in conjunction with attributes to generate linked databases.  Keys can be assigned to string columns, with sets of mixed data (in columns) following. 
-As with simple datasets, new compound datasets are created using either Group.create_dataset() or Group.require_dataset().  However, in compound datasets, dtype assignment is not optional.  Initializing the compound dataset follows the form:
+As with simple datasets, new compound datasets are created using either Group.create_dataset() or Group.require_dataset().  However, in compound datasets, dtype assignment is not optional.  Initializing the compound dataset follows the form::
 
-   >>> ds = fn.require_dataset(ds_path, data=HDFData, dtype=DataType, shape=rShape)
+    >>> ds = fn.require_dataset(ds_path, data=HDFData, dtype=DataType, shape=rShape)
 
 where dtype is a list of tuples containing the header, type, and array size (for lists) for each column in the dataset.  As an example, in order to create a compound dataset containing a string, integer, floating point, and list of integers. 
 
-1)	Create the data from the your data source.  Data is entered row-by-row as a list of tuples.
+1)	Create the data from the your data source.  Data is entered row-by-row as a list of tuples::
 
-   >>> HDFData = [
-   >>>		(‘loc1’, 1, [1, 2], 1.005),
-   >>>		(‘loc2’, 2, [3, 4], 2.3),
-   >>>		(‘loc3’, 3, [5, 6], 3.123),
-   >>>		(‘loc4’, 4, [7, 8], 4.015),
-   >>>		(‘loc5’, 5, [9, 0], 5.01),
-   >>>	   ]
+    >>> HDFData = [
+    >>>		(‘loc1’, 1, [1, 2], 1.005),   
+    >>>		(‘loc2’, 2, [3, 4], 2.3),   
+    >>>		(‘loc3’, 3, [5, 6], 3.123),   
+    >>>		(‘loc4’, 4, [7, 8], 4.015),   
+    >>>		(‘loc5’, 5, [9, 0], 5.01),   
+    >>>	   ]   
 
-2)	Declare the datatype for each column by reference to the header.  Datatype is entered row-by-row as a list of tuples, with array dimensions given as the third entry in the tuple.
+2)	Declare the datatype for each column by reference to the header.  Datatype is entered row-by-row as a list of tuples, with array dimensions given as the third entry in the tuple::
 
-   >>> DataType = [
-   >>>		(‘Location’, ‘S10’),
-   >>>		(‘LocNum’, ‘int’),
-   >>>		(‘LocList’, ‘int’, 2),
-   >>>		(‘LocFloat’, ‘float’),
-   >>>	   ]
+    >>> DataType = [
+    >>>		(‘Location’, ‘S10’),
+    >>>		(‘LocNum’, ‘int’),
+    >>>		(‘LocList’, ‘int’, 2),
+    >>>		(‘LocFloat’, ‘float’),
+    >>>	   ]
 
-3)	Define the shape as an integer, which is equal to the number of rows in the dataset.
+3)	Define the shape as an integer, which is equal to the number of rows in the dataset::
 
-   >>> rShape = 5
+    >>> rShape = 5
 
 Multiple indexing
 ~~~~~~~~~~~~~~~~~
 
 Indexing a dataset once loads a numpy array into memory.
 If you try to index it twice to write data, you may be surprised that nothing
-seems to have happened:
+seems to have happened::
 
-   >>> f = h5py.File('my_hdf5_file.h5', 'w')
-   >>> dset = f.create_dataset("test", (2, 2))
-   >>> dset[0][1] = 3.0  # No effect!
-   >>> print(dset[0][1])
-   0.0
+    >>> f = h5py.File('my_hdf5_file.h5', 'w')
+    >>> dset = f.create_dataset("test", (2, 2))
+    >>> dset[0][1] = 3.0  # No effect!
+    >>> print(dset[0][1])
+    0.0
 
-The assignment above only modifies the loaded array. It's equivalent to this:
+The assignment above only modifies the loaded array. It's equivalent to this::
 
-   >>> new_array = dset[0]
-   >>> new_array[1] = 3.0
-   >>> print(new_array[1])
-   3.0
-   >>> print(dset[0][1])
-   0.0
+    >>> new_array = dset[0]
+    >>> new_array[1] = 3.0
+    >>> print(new_array[1])
+    3.0
+    >>> print(dset[0][1])
+    0.0
 
-To write to the dataset, combine the indexes in a single step:
+To write to the dataset, combine the indexes in a single step::
 
-   >>> dset[0, 1] = 3.0
-   >>> print(dset[0, 1])
-   3.0
+    >>> dset[0, 1] = 3.0
+    >>> print(dset[0, 1])
+    3.0
 
 .. _dataset_iter:
 
