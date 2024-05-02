@@ -108,6 +108,39 @@ safe to use with very large target selections.  It is supported for the above
    Currently h5py does not support nested compound types, see :issue:`1197` for
    more information.
 
+Compound Datasets
+~~~~~~~~~~~~~~~~~
+
+Compound datasets can be used to store different types of data in separate columns.  This practice can be valuable when used in conjunction with attributes to generate linked databases.  Keys can be assigned to string columns, with sets of mixed data (in columns) following. 
+As with simple datasets, new compound datasets are created using either Group.create_dataset() or Group.require_dataset().  However, in compound datasets, dtype assignment is not optional.  Initializing the compound dataset follows the form:
+
+   >>> ds = fn.require_dataset(ds_path, data=HDFData, dtype=DataType, shape=rShape)
+
+where dtype is a list of tuples containing the header, type, and array size (for lists) for each column in the dataset.  As an example, in order to create a compound dataset containing a string, integer, floating point, and list of integers. 
+
+1)	Create the data from the your data source.  Data is entered row-by-row as a list of tuples.
+
+   >>> HDFData = [
+   >>>		(‘loc1’, 1, [1, 2], 1.005),
+   >>>		(‘loc2’, 2, [3, 4], 2.3),
+   >>>		(‘loc3’, 3, [5, 6], 3.123),
+   >>>		(‘loc4’, 4, [7, 8], 4.015),
+   >>>		(‘loc5’, 5, [9, 0], 5.01),
+   >>>	   ]
+
+2)	Declare the datatype for each column by reference to the header.  Datatype is entered row-by-row as a list of tuples, with array dimensions given as the third entry in the tuple.
+
+   >>> DataType = [
+   >>>		(‘Location’, ‘S10’),
+   >>>		(‘LocNum’, ‘int’),
+   >>>		(‘LocList’, ‘int’, 2),
+   >>>		(‘LocFloat’, ‘float’),
+   >>>	   ]
+
+3)	Define the shape as an integer, which is equal to the number of rows in the dataset.
+
+   >>> rShape = 5
+
 Multiple indexing
 ~~~~~~~~~~~~~~~~~
 
