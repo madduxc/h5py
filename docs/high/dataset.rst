@@ -108,7 +108,7 @@ safe to use with very large target selections.  It is supported for the above
    Currently h5py does not support nested compound types, see :issue:`1197` for
    more information.
 
-Compound Datasets
+Compound datasets
 ~~~~~~~~~~~~~~~~~
 
 In some cases it may desirable to stored mixed types of data in a single dataset.  Compound 
