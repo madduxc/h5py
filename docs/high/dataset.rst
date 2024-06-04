@@ -104,10 +104,6 @@ Broadcasting is implemented using repeated hyperslab selections, and is
 safe to use with very large target selections.  It is supported for the above
 "simple" (integer, slice and ellipsis) slicing only.
 
-.. warning::
-   Currently h5py does not support nested compound types, see :issue:`1197` for
-   more information.
-
 Compound datasets
 ~~~~~~~~~~~~~~~~~
 
@@ -165,6 +161,10 @@ string_dtype, as shown below:
 
 Note that fixed-length datatypes can truncate strings without notification.  Also note that this
 declaration can be used to override a given datatype (int to float, etc.).
+
+.. warning::
+   Currently h5py does not support nested compound types, see :issue:`1197` for
+   more information.
 
 Multiple indexing
 ~~~~~~~~~~~~~~~~~
