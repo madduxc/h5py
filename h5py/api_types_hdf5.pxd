@@ -115,10 +115,10 @@ cdef extern from "hdf5.h":
     H5F_SCOPE_DOWN      = 2     # for internal use only
 
   cdef enum H5F_close_degree_t:
-    H5F_CLOSE_WEAK  = 0,
-    H5F_CLOSE_SEMI  = 1,
-    H5F_CLOSE_STRONG = 2,
-    H5F_CLOSE_DEFAULT = 3
+    H5F_CLOSE_DEFAULT = 0,
+    H5F_CLOSE_WEAK    = 1,
+    H5F_CLOSE_SEMI    = 2,
+    H5F_CLOSE_STRONG  = 3
 
   cdef enum H5F_fspace_strategy_t:
     H5F_FSPACE_STRATEGY_FSM_AGGR = 0,  # FSM, Aggregators, VFD
@@ -384,6 +384,8 @@ cdef extern from "hdf5.h":
       int64_t     max_corder
 
 # === H5I - Identifier and reflection interface ===============================
+
+  int H5I_INVALID_HID
 
   IF HDF5_VERSION < VOL_MIN_HDF5_VERSION:
     ctypedef enum H5I_type_t:
