@@ -5,70 +5,67 @@
     linking.
 """
 
+import api_gen
+import os
+import os.path as op
+import sys
+from distutils.command.build_ext import build_ext
+from pathlib import Path
+from setup_configure import BuildConfig
+
 try:
     from setuptools import Extension
 except ImportError:
     from distutils.extension import Extension
-from distutils.command.build_ext import build_ext
-import sys
-import os
-import os.path as op
-from pathlib import Path
-
-import api_gen
-from setup_configure import BuildConfig
 
 
-def localpath(*args):
+def local_path(*args):
     return op.abspath(op.join(op.dirname(__file__), *args))
 
 
 MODULES = ['defs', '_errors', '_objects', '_proxy', 'h5fd', 'h5z',
-            'h5', 'h5i', 'h5r', 'utils', '_selector',
-            '_conv', 'h5t', 'h5s',
-            'h5p',
-            'h5d', 'h5a', 'h5f', 'h5g',
-            'h5l', 'h5o',
-            'h5ds', 'h5ac',
-            'h5pl']
+           'h5', 'h5i', 'h5r', 'utils', '_selector', 'h5t', 'h5s',
+           'h5p', 'h5d', 'h5a', 'h5f', 'h5g', 'h5l', 'h5o', 'h5ds',
+           'h5ac', 'h5pl']
 
 COMPILER_SETTINGS = {
-   'libraries'      : ['hdf5', 'hdf5_hl'],
-   'include_dirs'   : [localpath('lzf')],
-   'library_dirs'   : [],
-   'define_macros'  : [('H5_USE_110_API', None),
-                       # The definition should imply the one below, but CI on
-                       # Ubuntu 20.04 still gets H5Rdereference1 for some reason
-                       ('H5Rdereference_vers', 2),
-                       ('NPY_NO_DEPRECATED_API', 0),
-                      ]
+    'libraries': ['hdf5', 'hdf5_hl'],
+    'include_dirs': [local_path('lzf')],
+    'library_dirs': [],
+    'define_macros': [('H5_USE_110_API', None),
+                      ('H5Rdereference_vers', 2),
+                      ('NPY_NO_DEPRECATED_API', 0), ]
+    # The definition should imply 'H5Rdereference_vers', but CI on
+    # Ubuntu 20.04 still gets 'H5Rdereference1' for some reason
 }
 
-EXTRA_SRC = {'h5z': [ localpath("lzf/lzf_filter.c") ]}
+EXTRA_SRC = {
+    'h5z': [local_path("lzf/lzf_filter.c")]
+}
 
 # Set the environment variable H5PY_SYSTEM_LZF=1 if we want to
 # use the system lzf library
 if os.environ.get('H5PY_SYSTEM_LZF', '0') == '1':
     EXTRA_LIBRARIES = {
-       'h5z': [ 'lzf' ]
+       'h5z': ['lzf']
     }
 else:
-    COMPILER_SETTINGS['include_dirs'] += [localpath('lzf/lzf')]
+    COMPILER_SETTINGS['include_dirs'] += [local_path('lzf/lzf')]
 
-    EXTRA_SRC['h5z'] += [localpath("lzf/lzf/lzf_c.c"),
-                  localpath("lzf/lzf/lzf_d.c")]
+    EXTRA_SRC['h5z'] += [local_path("lzf/lzf/lzf_c.c"),
+                         local_path("lzf/lzf/lzf_d.c")]
 
     EXTRA_LIBRARIES = {}
 
 if sys.platform.startswith('win'):
-    COMPILER_SETTINGS['include_dirs'].append(localpath('windows'))
+    COMPILER_SETTINGS['include_dirs'].append(local_path('windows'))
     COMPILER_SETTINGS['define_macros'].extend([
         ('_HDF5USEDLL_', None),
         ('H5_BUILT_AS_DYNAMIC_LIB', None)
     ])
 
 
-class h5py_build_ext(build_ext):
+class H5PYBuildExt(build_ext):
 
     """
         Custom distutils command which encapsulates api_gen pre-building,
@@ -77,14 +74,23 @@ class h5py_build_ext(build_ext):
         Also handles making the Extension modules, since we can't rely on
         NumPy being present in the main body of the setup script.
     """
+    def __init__(self, config):
+
+        print("Executing cythonize()")
+        self.extensions = cythonize(self._make_extensions(config),
+                                    force=config.changed() or self.force,
+                                    language_level=3)
+
+
 
     @staticmethod
     def _make_extensions(config):
-        """ Produce a list of Extension instances which can be passed to
-        cythonize().
+        """
+            Produce a list of Extension instances which can be passed to
+            cythonize().
 
-        This is the point at which custom directories, MPI options, etc.
-        enter the build process.
+            This is the point at which custom directories, MPI options, etc.
+            enter the build process.
         """
         import numpy
 
@@ -107,6 +113,7 @@ class h5py_build_ext(build_ext):
             numpy_includes = os.path.join(os.path.dirname(numpy.core.__file__), 'include')
 
         settings['include_dirs'] += [numpy_includes]
+
         if config.mpi:
             import mpi4py
             settings['include_dirs'] += [mpi4py.get_include()]
@@ -116,14 +123,16 @@ class h5py_build_ext(build_ext):
             settings['runtime_library_dirs'] = settings['library_dirs']
 
         def make_extension(module):
-            sources = [localpath('h5py', module + '.pyx')] + EXTRA_SRC.get(module, [])
+            sources = [local_path('h5py', module + '.pyx')] + EXTRA_SRC.get(module, [])
             settings['libraries'] += EXTRA_LIBRARIES.get(module, [])
             return Extension('h5py.' + module, sources, **settings)
 
         return [make_extension(m) for m in MODULES]
 
     def run(self):
-        """ Distutils calls this method to run the command """
+        """
+            Distutils calls this method to run the command
+        """
 
         from Cython import __version__ as cython_version
         from Cython.Build import cythonize
@@ -149,9 +158,9 @@ class h5py_build_ext(build_ext):
                 f"{config.hdf5_version} from environment variable or library)"
             )
 
-        defs_file = localpath('h5py', 'defs.pyx')
-        func_file = localpath('h5py', 'api_functions.txt')
-        config_file = localpath('h5py', 'config.pxi')
+        defs_file = local_path('h5py', 'defs.pyx')
+        func_file = local_path('h5py', 'api_functions.txt')
+        config_file = local_path('h5py', 'config.pxi')
 
         # Rebuild low-level defs if missing or stale
         if not op.isfile(defs_file) or os.stat(func_file).st_mtime > os.stat(defs_file).st_mtime:
@@ -159,26 +168,20 @@ class h5py_build_ext(build_ext):
             api_gen.run()
 
         # Rewrite config.pxi file if needed
-        s = f"""\
-# This file is automatically generated by the h5py setup script.  Don't modify.
+        s = f"# This file is automatically generated by the h5py \
+                setup script.  Don't modify.\n\n" \
+                f"DEF MPI = {bool(config.mpi)}\n"\
+                f"DEF ROS3 = {bool(config.ros3)}\n"\
+                f"DEF HDF5_VERSION = {config.hdf5_version}\n"\
+                f"DEF DIRECT_VFD = {bool(config.direct_vfd)}\n"\
+                f"DEF VOL_MIN_HDF5_VERSION = (1,11,5)\n"\
+                f"DEF COMPLEX256_SUPPORT = {complex256_support}\n"\
+                f"DEF NUMPY_BUILD_VERSION = '{numpy.__version__}'\n"\
+                f"DEF CYTHON_BUILD_VERSION = '{cython_version}'"
 
-DEF MPI = {bool(config.mpi)}
-DEF ROS3 = {bool(config.ros3)}
-DEF HDF5_VERSION = {config.hdf5_version}
-DEF DIRECT_VFD = {bool(config.direct_vfd)}
-DEF VOL_MIN_HDF5_VERSION = (1,11,5)
-DEF COMPLEX256_SUPPORT = {complex256_support}
-DEF NUMPY_BUILD_VERSION = '{numpy.__version__}'
-DEF CYTHON_BUILD_VERSION = '{cython_version}'
-"""
         write_if_changed(config_file, s)
 
         # Run Cython
-        print("Executing cythonize()")
-        self.extensions = cythonize(self._make_extensions(config),
-                                    force=config.changed() or self.force,
-                                    language_level=3)
-
         # Perform the build
         build_ext.run(self)
 
@@ -187,9 +190,10 @@ DEF CYTHON_BUILD_VERSION = '{cython_version}'
 
 
 def write_if_changed(target_path, s: str):
-    """Overwrite target_path unless the contents already match s
+    """
+        Overwrite target_path unless the contents already match s
 
-    Avoids changing the mtime when we're just writing the same data.
+        Avoids changing the mtime when we're just writing the same data.
     """
     p = Path(target_path)
     b = s.encode('utf-8')
